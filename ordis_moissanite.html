@@ -1,0 +1,998 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>✨ Photon Playground • Moissanite Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+            font-family: system-ui, -apple-system, "SF Pro Text", sans-serif;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .hud {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 14px;
+            padding: 10px 22px;
+            background: radial-gradient(circle at 0 0, rgba(56,189,248,0.35), rgba(15,23,42,0.85));
+            backdrop-filter: blur(14px);
+            border-radius: 999px;
+            border: 1px solid rgba(148,163,184,0.55);
+            box-shadow:
+                0 0 20px rgba(56,189,248,0.4),
+                0 0 40px rgba(147,51,234,0.25);
+            z-index: 100;
+            font-size: 13px;
+            color: rgba(241,245,249,0.9);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        .hud-item {
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+            white-space: nowrap;
+        }
+        .hud-label {
+            opacity: 0.7;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            font-size: 10px;
+        }
+        .hud-value {
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            font-size: 12px;
+        }
+        .controls {
+            position: fixed;
+            bottom: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px 10px;
+            background: radial-gradient(circle at 100% 100%, rgba(244,114,182,0.25), rgba(15,23,42,0.92));
+            backdrop-filter: blur(16px);
+            border-radius: 999px;
+            border: 1px solid rgba(148,163,184,0.55);
+            box-shadow:
+                0 0 16px rgba(244,114,182,0.4),
+                0 0 36px rgba(56,189,248,0.35);
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        .ctrl-btn {
+            padding: 8px 15px;
+            border-radius: 999px;
+            border: 1px solid rgba(148,163,184,0.6);
+            background: radial-gradient(circle at 0 0, rgba(56,189,248,0.28), rgba(15,23,42,0.9));
+            color: #e5e7eb;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.18s ease;
+        }
+        .ctrl-btn span.emoji {
+            font-size: 13px;
+        }
+        .ctrl-btn:hover {
+            border-color: rgba(248,250,252,0.85);
+            box-shadow: 0 0 16px rgba(56,189,248,0.5);
+            transform: translateY(-1px);
+        }
+        .ctrl-btn.active {
+            background: radial-gradient(circle at 50% 0, rgba(56,189,248,0.95), rgba(147,51,234,0.95));
+            box-shadow:
+                0 0 16px rgba(56,189,248,0.8),
+                0 0 34px rgba(236,72,153,0.7);
+            color: #0b1120;
+            border-color: rgba(248,250,252,1);
+        }
+        .intro {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background:
+                radial-gradient(circle at 15% 0%, #020617, #000),
+                radial-gradient(circle at 85% 100%, #020617, #000);
+            overflow: hidden;
+            z-index: 200;
+            padding: 24px;
+            text-align: center;
+        }
+        .intro::before {
+            content: "";
+            position: absolute;
+            width: 420px;
+            height: 420px;
+            border-radius: 999px;
+            background: radial-gradient(circle, rgba(56,189,248,0.5), transparent);
+            filter: blur(40px);
+            opacity: 0.35;
+            top: -80px;
+            left: -120px;
+            pointer-events: none;
+        }
+        .intro::after {
+            content: "";
+            position: absolute;
+            width: 520px;
+            height: 520px;
+            border-radius: 999px;
+            background: radial-gradient(circle, rgba(236,72,153,0.55), transparent);
+            filter: blur(55px);
+            opacity: 0.4;
+            bottom: -160px;
+            right: -180px;
+            pointer-events: none;
+        }
+        .intro-inner {
+            position: relative;
+            max-width: 540px;
+            z-index: 1;
+        }
+        .intro h1 {
+            font-size: clamp(2.1rem, 7.4vw, 3.8rem);
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #22d3ee, #f472b6, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+        .intro-sub {
+            font-size: clamp(0.9rem, 2.8vw, 1.05rem);
+            color: rgba(226,232,240,0.85);
+            line-height: 1.7;
+            margin-bottom: 24px;
+        }
+        .intro-meta {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 26px;
+            flex-wrap: wrap;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.16em;
+            color: rgba(148,163,184,0.9);
+        }
+        .chip {
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(148,163,184,0.7);
+            background: radial-gradient(circle at 0 0, rgba(15,23,42,0.9), rgba(15,23,42,0.6));
+        }
+        .start-btn {
+            padding: 14px 42px;
+            font-size: 0.98rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 999px;
+            background: radial-gradient(circle at 0 0, #22d3ee, #a855f7);
+            color: #020617;
+            cursor: pointer;
+            box-shadow:
+                0 0 20px rgba(56,189,248,0.8),
+                0 0 40px rgba(168,85,247,0.7);
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+        .start-btn:hover {
+            transform: translateY(-1px) scale(1.02);
+            box-shadow:
+                0 0 28px rgba(56,189,248,1),
+                0 0 55px rgba(236,72,153,0.9);
+        }
+        .start-hint {
+            margin-top: 10px;
+            font-size: 11px;
+            color: rgba(148,163,184,0.85);
+        }
+        .intro.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.55s ease;
+        }
+        @media (max-width: 640px) {
+            .hud {
+                top: 10px;
+                padding: 7px 14px;
+                gap: 8px;
+                font-size: 11px;
+            }
+            .controls {
+                bottom: 10px;
+                padding: 6px 8px;
+                gap: 6px;
+            }
+            .ctrl-btn {
+                padding: 7px 11px;
+                font-size: 10px;
+            }
+        }
+        .signature {
+            position: fixed;
+            right: 10px;
+            bottom: 6px;
+            font-size: 10px;
+            color: rgba(148,163,184,0.75);
+            pointer-events: none;
+            text-shadow: 0 0 6px rgba(15,23,42,0.9);
+        }
+    </style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+
+<div class="intro" id="intro">
+    <div class="intro-inner">
+        <h1>Photon Playground</h1>
+        <div class="intro-meta">
+            <div class="chip">Geometric Optics</div>
+            <div class="chip">Moissanite Dispersion</div>
+            <div class="chip">Toy ✕ Physics</div>
+        </div>
+        <p class="intro-sub">
+            Drag to emit packets of light. Drop refractive lenses and a high-dispersion
+            moissanite core into space. Watch rays bend, split, and ping-pong around
+            an ultra-bright gemstone whose index of refraction and dispersion are
+            inspired by real moissanite.
+        </p>
+        <button class="start-btn" id="startBtn">Begin Emission</button>
+        <div class="start-hint">Tip: place a 💎 Moissanite in the center, then fire streams diagonally through it.</div>
+    </div>
+</div>
+
+<div class="hud" id="hud">
+    <div class="hud-item">
+        <span class="hud-label">Photons</span>
+        <span class="hud-value" id="photonCount">0</span>
+    </div>
+    <div class="hud-item">
+        <span class="hud-label">Mode</span>
+        <span class="hud-value" id="modeLabel">Stream</span>
+    </div>
+    <div class="hud-item">
+        <span class="hud-label">FPS</span>
+        <span class="hud-value" id="fpsCounter">60</span>
+    </div>
+    <div class="hud-item">
+        <span class="hud-label">Elements</span>
+        <span class="hud-value" id="elementCount">0 lenses, 0 gems</span>
+    </div>
+</div>
+
+<div class="controls" id="controls">
+    <button class="ctrl-btn active" data-mode="stream">
+        <span class="emoji">💫</span><span>Stream</span>
+    </button>
+    <button class="ctrl-btn" data-mode="burst">
+        <span class="emoji">💥</span><span>Burst</span>
+    </button>
+    <button class="ctrl-btn" data-mode="wave">
+        <span class="emoji">🌊</span><span>Wavefront</span>
+    </button>
+    <button class="ctrl-btn" data-mode="lens">
+        <span class="emoji">🔮</span><span>Lens Node</span>
+    </button>
+    <button class="ctrl-btn" data-mode="moissanite">
+        <span class="emoji">💎</span><span>Moissanite</span>
+    </button>
+    <button class="ctrl-btn" data-mode="clear">
+        <span class="emoji">🧹</span><span>Clear</span>
+    </button>
+</div>
+
+<div class="signature">Ordis/ChatGPT • Photon Playground • Moissanite Edition</div>
+
+<script>
+(function() {
+    "use strict";
+
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    const intro = document.getElementById("intro");
+    const startBtn = document.getElementById("startBtn");
+    const hud = document.getElementById("hud");
+    const controls = document.getElementById("controls");
+    const photonCountEl = document.getElementById("photonCount");
+    const modeLabelEl = document.getElementById("modeLabel");
+    const fpsCounterEl = document.getElementById("fpsCounter");
+    const elementCountEl = document.getElementById("elementCount");
+
+    let width, height, dpr;
+    let isRunning = false;
+    let currentMode = "stream";
+
+    const SPEED_OF_LIGHT = 9.0;
+    const PHOTON_LIFETIME = 430;
+    const MAX_PHOTONS = 4200;
+    const TRAIL_LENGTH = 26;
+    const N_AIR = 1.0;
+
+    function clampWavelength(lambda) {
+        if (lambda < 380) return 380;
+        if (lambda > 700) return 700;
+        return lambda;
+    }
+
+    function refractiveIndexForWavelength(lambdaNm) {
+        const wl = clampWavelength(lambdaNm);
+        const t = (wl - 380) / 320;
+        return 1.54 - 0.04 * t;
+    }
+
+    function refractiveIndexForWavelengthMoissanite(lambdaNm) {
+        const wl = clampWavelength(lambdaNm);
+        const t = (wl - 380) / 320;
+        // Moissanite has high dispersion; we exaggerate a bit for visual "fire"
+        // Approx: violet ~ 2.74, red ~ 2.62
+        return 2.74 - 0.12 * t;
+    }
+
+    function resize() {
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        canvas.style.width = width + "px";
+        canvas.style.height = height + "px";
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    class Lens {
+        constructor(x, y, radius) {
+            this.x = x;
+            this.y = y;
+            this.radius = radius;
+            this.phase = Math.random() * Math.PI * 2;
+        }
+        draw(ctx, time) {
+            const r = this.radius;
+            const pulsate = 0.04 * Math.sin(time * 0.0015 + this.phase);
+            const effectiveRadius = r * (1.0 + pulsate);
+
+            const grad = ctx.createRadialGradient(
+                this.x, this.y, 0,
+                this.x, this.y, effectiveRadius
+            );
+            grad.addColorStop(0.0, "rgba(248,250,252,0.9)");
+            grad.addColorStop(0.25, "rgba(56,189,248,0.55)");
+            grad.addColorStop(0.55, "rgba(168,85,247,0.38)");
+            grad.addColorStop(0.9, "rgba(15,23,42,0)");
+            ctx.save();
+            ctx.beginPath();
+            ctx.fillStyle = grad;
+            ctx.arc(this.x, this.y, effectiveRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.lineWidth = 1.2;
+            ctx.strokeStyle = "rgba(226,232,240,0.85)";
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = "rgba(59,130,246,0.75)";
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            ctx.restore();
+        }
+    }
+
+    class Moissanite {
+        constructor(x, y, radius) {
+            this.x = x;
+            this.y = y;
+            this.radius = radius;
+            this.rotation = Math.random() * Math.PI * 2;
+            this.twist = (Math.random() * 0.35 + 0.18) * (Math.random() < 0.5 ? -1 : 1);
+            this.phase = Math.random() * Math.PI * 2;
+        }
+        draw(ctx, time) {
+            const baseR = this.radius;
+            const t = time * 0.0006;
+            const spin = this.rotation + t * this.twist;
+            const pulse = 0.06 * Math.sin(time * 0.002 + this.phase);
+            const rOuter = baseR * (1.0 + pulse);
+            const rInner = baseR * 0.45;
+            const rCrown = baseR * 0.75;
+
+            ctx.save();
+            ctx.translate(this.x, this.y);
+
+            // Core glow
+            const core = ctx.createRadialGradient(0, 0, 0, 0, 0, rOuter);
+            core.addColorStop(0.0, "rgba(248,250,252,0.98)");
+            core.addColorStop(0.25, "rgba(56,189,248,0.9)");
+            core.addColorStop(0.5, "rgba(236,72,153,0.75)");
+            core.addColorStop(0.9, "rgba(15,23,42,0)");
+            ctx.beginPath();
+            ctx.fillStyle = core;
+            ctx.arc(0, 0, rOuter, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Facet ring
+            const facets = 14;
+            for (let i = 0; i < facets; i++) {
+                const a0 = spin + (i / facets) * Math.PI * 2;
+                const a1 = spin + ((i + 1) / facets) * Math.PI * 2;
+                const jitter0 = (Math.sin(i * 1.3 + time * 0.002) * 0.07);
+                const jitter1 = (Math.cos(i * 1.7 + time * 0.0023) * 0.07);
+                const r0 = rCrown * (1 + jitter0);
+                const r1 = rCrown * (1 + jitter1);
+
+                const x0 = Math.cos(a0) * r0;
+                const y0 = Math.sin(a0) * r0;
+                const x1 = Math.cos(a1) * r1;
+                const y1 = Math.sin(a1) * r1;
+
+                const hue = (i / facets) * 300 + 200;
+                const alpha = 0.6 + 0.3 * Math.sin(time * 0.003 + i * 0.8);
+
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(x0, y0);
+                ctx.lineTo(x1, y1);
+                ctx.closePath();
+                ctx.fillStyle = `hsla(${hue}, 90%, 72%, ${alpha})`;
+                ctx.globalAlpha = 0.65;
+                ctx.fill();
+
+                ctx.globalAlpha = 0.95;
+                ctx.lineWidth = 0.9;
+                ctx.strokeStyle = `hsla(${hue}, 100%, 88%, 0.9)`;
+                ctx.stroke();
+            }
+
+            // Starburst cross
+            ctx.globalAlpha = 0.95;
+            ctx.lineWidth = 1.2;
+            ctx.strokeStyle = "rgba(248,250,252,0.95)";
+            ctx.shadowBlur = 14;
+            ctx.shadowColor = "rgba(248,250,252,0.95)";
+            ctx.beginPath();
+            ctx.moveTo(-rInner, 0);
+            ctx.lineTo(rInner, 0);
+            ctx.moveTo(0, -rInner);
+            ctx.lineTo(0, rInner);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            ctx.restore();
+        }
+    }
+
+    class Photon {
+        constructor(x, y, angle, wavelength) {
+            this.x = x;
+            this.y = y;
+            this.prevX = x;
+            this.prevY = y;
+            this.angle = angle;
+            this.wavelength = clampWavelength(wavelength);
+            this.speed = SPEED_OF_LIGHT * (0.85 + Math.random() * 0.35);
+            this.vx = Math.cos(angle) * this.speed;
+            this.vy = Math.sin(angle) * this.speed;
+            this.life = PHOTON_LIFETIME;
+            this.maxLife = PHOTON_LIFETIME;
+            this.trail = [];
+            this.intensity = 1.0;
+            this.mediumIndex = N_AIR;
+        }
+
+        applyRefractionBoundary(cx, cy, entering, nInside) {
+            const lambda = this.wavelength;
+            const n2 = entering ? nInside : N_AIR;
+            const n1 = entering ? N_AIR : nInside;
+
+            let dx = this.x - cx;
+            let dy = this.y - cy;
+            const dist = Math.sqrt(dx * dx + dy * dy) || 1e-6;
+            dx /= dist;
+            dy /= dist;
+
+            let Nx, Ny;
+            if (entering) {
+                Nx = -dx;
+                Ny = -dy;
+            } else {
+                Nx = dx;
+                Ny = dy;
+            }
+
+            let dirLen = Math.sqrt(this.vx * this.vx + this.vy * this.vy) || 1e-6;
+            let Ix = this.vx / dirLen;
+            let Iy = this.vy / dirLen;
+
+            const dotNI = Ix * Nx + Iy * Ny;
+            const cosThetaI = Math.max(-1, Math.min(1, dotNI));
+            const sinThetaI = Math.sqrt(Math.max(0, 1 - cosThetaI * cosThetaI));
+
+            const eta = n1 / n2;
+            const sinThetaT = eta * sinThetaI;
+
+            if (sinThetaT > 1.0) {
+                const reflectX = Ix - 2 * dotNI * Nx;
+                const reflectY = Iy - 2 * dotNI * Ny;
+                this.vx = reflectX * this.speed;
+                this.vy = reflectY * this.speed;
+                this.angle = Math.atan2(this.vy, this.vx);
+                this.intensity *= 0.97;
+                return;
+            }
+
+            const cosThetaT = Math.sqrt(Math.max(0, 1 - sinThetaT * sinThetaT));
+
+            let Tx = Ix - dotNI * Nx;
+            let Ty = Iy - dotNI * Ny;
+            let tLen = Math.sqrt(Tx * Tx + Ty * Ty);
+            if (tLen < 1e-6) {
+                const sign = cosThetaI >= 0 ? 1 : -1;
+                this.vx = Nx * sign * this.speed;
+                this.vy = Ny * sign * this.speed;
+                this.angle = Math.atan2(this.vy, this.vx);
+                this.intensity *= 0.995;
+                return;
+            }
+            Tx /= tLen;
+            Ty /= tLen;
+
+            const signN = cosThetaI >= 0 ? 1 : -1;
+            const dirTx = Tx * sinThetaT;
+            const dirTy = Ty * sinThetaT;
+            const dirNx = Nx * (cosThetaT * signN);
+            const dirNy = Ny * (cosThetaT * signN);
+
+            const newDx = dirTx + dirNx;
+            const newDy = dirTy + dirNy;
+            const normNew = Math.sqrt(newDx * newDx + newDy * newDy) || 1e-6;
+
+            const vx = (newDx / normNew) * this.speed;
+            const vy = (newDy / normNew) * this.speed;
+
+            this.vx = vx;
+            this.vy = vy;
+            this.angle = Math.atan2(this.vy, this.vx);
+            this.mediumIndex = n2;
+            this.intensity *= entering ? 0.995 : 0.992;
+        }
+
+        update(lenses, moissanites) {
+            this.prevX = this.x;
+            this.prevY = this.y;
+
+            this.x += this.vx;
+            this.y += this.vy;
+
+            this.trail.push({
+                x: this.x,
+                y: this.y,
+                intensity: this.intensity
+            });
+            if (this.trail.length > TRAIL_LENGTH) {
+                this.trail.shift();
+            }
+
+            // box reflections
+            if (this.x <= 0 || this.x >= width) {
+                this.vx *= -1;
+                this.x = Math.max(0, Math.min(width, this.x));
+                this.angle = Math.atan2(this.vy, this.vx);
+                this.intensity *= 0.955;
+            }
+            if (this.y <= 0 || this.y >= height) {
+                this.vy *= -1;
+                this.y = Math.max(0, Math.min(height, this.y));
+                this.angle = Math.atan2(this.vy, this.vx);
+                this.intensity *= 0.955;
+            }
+
+            // Lenses
+            for (let i = 0; i < lenses.length; i++) {
+                const lens = lenses[i];
+                const dxPrev = this.prevX - lens.x;
+                const dyPrev = this.prevY - lens.y;
+                const distPrev = Math.sqrt(dxPrev * dxPrev + dyPrev * dyPrev);
+                const dxNow = this.x - lens.x;
+                const dyNow = this.y - lens.y;
+                const distNow = Math.sqrt(dxNow * dxNow + dyNow * dyNow);
+                const r = lens.radius;
+
+                const wasInside = distPrev < r;
+                const isInside = distNow < r;
+
+                if (!wasInside && isInside) {
+                    const nLens = refractiveIndexForWavelength(this.wavelength);
+                    this.applyRefractionBoundary(lens.x, lens.y, true, nLens);
+                } else if (wasInside && !isInside) {
+                    const nLens = refractiveIndexForWavelength(this.wavelength);
+                    this.applyRefractionBoundary(lens.x, lens.y, false, nLens);
+                }
+            }
+
+            // Moissanite
+            for (let i = 0; i < moissanites.length; i++) {
+                const gem = moissanites[i];
+                const dxPrev = this.prevX - gem.x;
+                const dyPrev = this.prevY - gem.y;
+                const distPrev = Math.sqrt(dxPrev * dxPrev + dyPrev * dyPrev);
+                const dxNow = this.x - gem.x;
+                const dyNow = this.y - gem.y;
+                const distNow = Math.sqrt(dxNow * dxNow + dyNow * dyNow);
+                const r = gem.radius;
+
+                const wasInside = distPrev < r;
+                const isInside = distNow < r;
+
+                if (!wasInside && isInside) {
+                    const nGem = refractiveIndexForWavelengthMoissanite(this.wavelength);
+                    this.applyRefractionBoundary(gem.x, gem.y, true, nGem);
+                } else if (wasInside && !isInside) {
+                    const nGem = refractiveIndexForWavelengthMoissanite(this.wavelength);
+                    this.applyRefractionBoundary(gem.x, gem.y, false, nGem);
+                }
+            }
+
+            this.life--;
+            this.intensity *= 0.998;
+            return this.life > 0 && this.intensity > 0.02;
+        }
+
+        draw(ctx) {
+            const lifeRatio = this.life / this.maxLife;
+            const alpha = lifeRatio * this.intensity;
+
+            const wl = this.wavelength;
+            const t = (wl - 380) / 320;
+            const hue = 260 + t * 220;
+            const sat = 100;
+            const light = 70;
+
+            if (this.trail.length > 1) {
+                ctx.beginPath();
+                ctx.moveTo(this.trail[0].x, this.trail[0].y);
+                for (let i = 1; i < this.trail.length; i++) {
+                    ctx.lineTo(this.trail[i].x, this.trail[i].y);
+                }
+                const head = this.trail[this.trail.length - 1];
+                const grad = ctx.createLinearGradient(
+                    this.trail[0].x, this.trail[0].y,
+                    head.x, head.y
+                );
+                grad.addColorStop(0, `hsla(${hue}, ${sat}%, ${light}%, 0)`);
+                grad.addColorStop(1, `hsla(${hue}, ${sat}%, ${light + 5}%, ${alpha * 0.9})`);
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = 2.1;
+                ctx.stroke();
+            }
+
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, 2.3, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(${hue}, ${sat}%, ${light + 10}%, ${Math.min(1, alpha * 1.3)})`;
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = `hsla(${hue}, 100%, 70%, 0.95)`;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+    }
+
+    let photons = [];
+    let lenses = [];
+    let moissanites = [];
+
+    let mouse = {
+        x: 0, y: 0,
+        prevX: 0, prevY: 0,
+        down: false
+    };
+
+    let lastTime = performance.now();
+    let fpsAccum = 0;
+    let fpsFrames = 0;
+    let fps = 60;
+
+    function updateElementLabel() {
+        const lensLabel = lenses.length === 1 ? "1 lens" : lenses.length + " lenses";
+        const gemLabel = moissanites.length === 1 ? "1 gem" : moissanites.length + " gems";
+        elementCountEl.textContent = lensLabel + ", " + gemLabel;
+    }
+
+    function emitPhotonStream(x, y) {
+        const dx = x - mouse.prevX;
+        const dy = y - mouse.prevY;
+        const baseAngle = Math.atan2(dy || 0.0001, dx || 0.0001);
+        const spread = 0.32;
+        for (let i = 0; i < 3; i++) {
+            if (photons.length >= MAX_PHOTONS) break;
+            const angle = baseAngle + (Math.random() - 0.5) * spread;
+            const wavelength = 380 + Math.random() * 320;
+            photons.push(new Photon(x, y, angle, wavelength));
+        }
+    }
+
+    function emitPhotonBurst(x, y) {
+        const count = 130;
+        for (let i = 0; i < count; i++) {
+            if (photons.length >= MAX_PHOTONS) break;
+            const angle = (i / count) * Math.PI * 2;
+            const wavelength = 410 + Math.random() * 260;
+            photons.push(new Photon(x, y, angle, wavelength));
+        }
+    }
+
+    function emitPhotonWavefront(x, y) {
+        const ringCount = 42;
+        const radius = 6;
+        for (let i = 0; i < ringCount; i++) {
+            if (photons.length >= MAX_PHOTONS) break;
+            const angle = (i / ringCount) * Math.PI * 2;
+            const px = x + Math.cos(angle) * radius;
+            const py = y + Math.sin(angle) * radius;
+            const wavelength = 390 + Math.random() * 280;
+            photons.push(new Photon(px, py, angle, wavelength));
+        }
+    }
+
+    function addLens(x, y) {
+        const baseR = Math.min(width, height) * 0.12;
+        const radius = Math.max(60, Math.min(130, baseR));
+        lenses.push(new Lens(x, y, radius));
+        updateElementLabel();
+    }
+
+    function addMoissanite(x, y) {
+        const baseR = Math.min(width, height) * 0.13;
+        const radius = Math.max(70, Math.min(150, baseR));
+        moissanites.push(new Moissanite(x, y, radius));
+        updateElementLabel();
+    }
+
+    function handlePointerDown(x, y) {
+        mouse.down = true;
+        mouse.prevX = mouse.x = x;
+        mouse.prevY = mouse.y = y;
+
+        if (currentMode === "burst") {
+            emitPhotonBurst(x, y);
+        } else if (currentMode === "wave") {
+            emitPhotonWavefront(x, y);
+        } else if (currentMode === "lens") {
+            addLens(x, y);
+        } else if (currentMode === "moissanite") {
+            addMoissanite(x, y);
+        }
+    }
+
+    function handlePointerMove(x, y) {
+        const prevX = mouse.x;
+        const prevY = mouse.y;
+        mouse.x = x;
+        mouse.y = y;
+
+        if (!mouse.down) {
+            mouse.prevX = mouse.x;
+            mouse.prevY = mouse.y;
+            return;
+        }
+
+        if (currentMode === "stream") {
+            emitPhotonStream(x, y);
+        } else if (currentMode === "wave") {
+            const dx = x - prevX;
+            const dy = y - prevY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > 12) {
+                emitPhotonWavefront(x, y);
+            }
+        }
+        mouse.prevX = x;
+        mouse.prevY = y;
+    }
+
+    function handlePointerUp() {
+        mouse.down = false;
+    }
+
+    canvas.addEventListener("mousedown", (e) => {
+        handlePointerDown(e.clientX, e.clientY);
+    });
+    window.addEventListener("mousemove", (e) => {
+        if (!isRunning) return;
+        handlePointerMove(e.clientX, e.clientY);
+    });
+    window.addEventListener("mouseup", () => {
+        handlePointerUp();
+    });
+
+    canvas.addEventListener("touchstart", (e) => {
+        const t = e.changedTouches[0];
+        handlePointerDown(t.clientX, t.clientY);
+    }, { passive: false });
+    canvas.addEventListener("touchmove", (e) => {
+        e.preventDefault();
+        const t = e.changedTouches[0];
+        handlePointerMove(t.clientX, t.clientY);
+    }, { passive: false });
+    canvas.addEventListener("touchend", () => {
+        handlePointerUp();
+    }, { passive: false });
+
+    window.addEventListener("wheel", (e) => {
+        if (!isRunning) return;
+        const delta = Math.sign(e.deltaY);
+        const factor = delta > 0 ? 0.96 : 1.04;
+        photons.forEach(p => {
+            p.speed *= factor;
+            const len = Math.sqrt(p.vx * p.vx + p.vy * p.vy) || 1e-6;
+            const ux = p.vx / len;
+            const uy = p.vy / len;
+            p.vx = ux * p.speed;
+            p.vy = uy * p.speed;
+        });
+    }, { passive: true });
+
+    controls.addEventListener("click", (e) => {
+        const btn = e.target.closest(".ctrl-btn");
+        if (!btn) return;
+        const mode = btn.getAttribute("data-mode");
+        if (!mode) return;
+
+        document.querySelectorAll(".ctrl-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        if (mode === "clear") {
+            photons = [];
+            lenses = [];
+            moissanites = [];
+            photonCountEl.textContent = "0";
+            updateElementLabel();
+            return;
+        }
+
+        currentMode = mode;
+        modeLabelEl.textContent =
+            mode === "stream" ? "Stream" :
+            mode === "burst" ? "Burst" :
+            mode === "wave"  ? "Wavefront" :
+            mode === "lens"  ? "Lens Node" :
+            mode === "moissanite" ? "Moissanite" : mode;
+    });
+
+    function drawBackground(time) {
+        ctx.globalCompositeOperation = "source-over";
+        ctx.fillStyle = "rgba(2,6,23,0.35)";
+        ctx.fillRect(0, 0, width, height);
+
+        const cx = width * 0.5;
+        const cy = height * 0.5;
+        const maxR = Math.max(width, height) * 0.85;
+        const bg = ctx.createRadialGradient(
+            cx, cy * 0.95, 0,
+            cx, cy * 0.9, maxR
+        );
+        bg.addColorStop(0, "rgba(15,23,42,0.95)");
+        bg.addColorStop(0.35, "rgba(2,6,23,1)");
+        bg.addColorStop(1, "rgba(0,0,0,1)");
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.save();
+        ctx.globalCompositeOperation = "screen";
+        ctx.fillStyle = "rgba(148,163,184,0.35)";
+        for (let i = 0; i < 36; i++) {
+            const x = Math.random() * width;
+            const y = Math.random() * height;
+            const r = Math.random() * 1.15;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        const t = time * 0.00006;
+        const bandCount = 3;
+        for (let i = 0; i < bandCount; i++) {
+            const phase = t + i * 2.1;
+            const yMid = height * (0.25 + 0.18 * i);
+            const grad = ctx.createLinearGradient(0, yMid - 80, width, yMid + 80);
+            grad.addColorStop(0, "rgba(56,189,248,0)");
+            grad.addColorStop(0.5, `rgba(56,189,248,${0.25 + 0.18 * Math.sin(phase)})`);
+            grad.addColorStop(1, "rgba(236,72,153,0)");
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, yMid - 80, width, 160);
+        }
+
+        ctx.restore();
+    }
+
+    function drawScene(time) {
+        drawBackground(time);
+
+        ctx.save();
+        ctx.globalCompositeOperation = "screen";
+        for (let i = 0; i < lenses.length; i++) {
+            lenses[i].draw(ctx, time);
+        }
+        for (let i = 0; i < moissanites.length; i++) {
+            moissanites[i].draw(ctx, time);
+        }
+        for (let i = 0; i < photons.length; i++) {
+            photons[i].draw(ctx);
+        }
+        ctx.restore();
+    }
+
+    function update(dt, now) {
+        fpsAccum += dt;
+        fpsFrames++;
+        if (fpsAccum >= 0.5) {
+            fps = fpsFrames / fpsAccum;
+            fpsCounterEl.textContent = fps.toFixed(1);
+            fpsAccum = 0;
+            fpsFrames = 0;
+        }
+
+        photons = photons.filter(p => p.update(lenses, moissanites));
+        photonCountEl.textContent = photons.length.toString();
+    }
+
+    function loop(now) {
+        if (!isRunning) return;
+        const dt = (now - lastTime) / 1000;
+        lastTime = now;
+
+        update(dt, now);
+        drawScene(now);
+        requestAnimationFrame(loop);
+    }
+
+    startBtn.addEventListener("click", () => {
+        intro.classList.add("hidden");
+        hud.style.opacity = "1";
+        controls.style.opacity = "1";
+        if (!isRunning) {
+            isRunning = true;
+            lastTime = performance.now();
+            requestAnimationFrame(loop);
+        }
+    });
+
+    window.addEventListener("resize", resize);
+    resize();
+})();
+</script>
+</body>
+</html>
